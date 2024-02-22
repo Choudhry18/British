@@ -19,7 +19,9 @@ inputs = ["5",
           "76 - (7 % 10) - 6 MS",
           "ifz MR then sqrt 32 else pie",
           "else ifz then MR MS - 0.0",
-          "0.0 0 0.9 1.9 1.5"
+          "0.0 0 0.9 1.9 1.5",
+          "5 = 5",
+          "() ) )"
           ]
 
 pad str n = 

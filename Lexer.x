@@ -8,12 +8,13 @@ $digit = 0-9
 $alpha = [a-zA-Z]
 
 tokens :- 
-  =                        { const EqTok }
-  \+                       { const AddTok }
-  \-                       { const SubTok }
-  \*                       { const MultTok }
-  \^                       { const ExpTok }
-  \/                       { const DivTok}
+  =                        { const (OpTok EqOp) }
+  \+                       { const (OpTok AddOp) }
+  \-                       { const (OpTok SubOp) }
+  \*                       { const (OpTok MultOp) }
+  \^                       { const (OpTok ExpOp)}
+  \/                       { const (OpTok DivOp)}
+  \%                       { const (OpTok DivOp) }
   MR                       { const MRTok }
   MS                       { const MSTok }
   ifz                      { const IfzTok}
@@ -21,19 +22,24 @@ tokens :-
   else                     { const ElseTok }
   \(                       { const LeftPTok }
   \)                       { const RightPTok }
-  \%                       { const ModTok }
   sqrt                     { const SqrtTok }
   "\\n"                    { const EOLTok }
-  pie                      { const PiTok }
-  fee                      { const FeeTok }
-  phi                      { const PhiTok }
-  mole                     { const MoleTok }
+  pie                      { const (ConstTok Pi)}
+  fee                      { const (ConstTok Fee)}
+  phi                      { const (ConstTok Phi)}
+  mole                     { const (ConstTok Mole)}
   $white                   ;
   [a-z][$alpha $digit]*    { VarTok }
   \-? $digit+              { IntTok . read }
   \-? $digit+ \. $digit+   { Realtok . read }
 {
-data Token = EqTok | AddTok | SubTok | MultTok | DivTok | ExpTok | ModTok | IfzTok | ThenTok | ElseTok | EOLTok | MRTok | MSTok | LeftPTok | RightPTok | SqrtTok | PiTok | FeeTok | PhiTok | MoleTok | VarTok String | IntTok Integer | Realtok Double deriving (Show, Eq) 
+data Token = OpTok Op| ConstTok Const | IfzTok | ThenTok | ElseTok | EOLTok | MRTok | MSTok | LeftPTok | RightPTok | SqrtTok 
+             | VarTok String | IntTok Integer | Realtok Double deriving (Show, Eq) 
+
+data Op = EqOp | AddOp | SubOp | MultOp | DivOp | ExpOp | ModOp deriving (Show, Eq) 
+
+data Const = Pi | Fee | Phi | Mole deriving (Show, Eq) 
+
 scanTokens :: String -> Maybe [Token]
 scanTokens str = go ('\n',[],str)
   where go inp@(_,_bs,str) =

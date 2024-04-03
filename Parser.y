@@ -31,13 +31,13 @@ import Data.Maybe
   int                     { IntTok $$ }
   real                    { Realtok $$}
 
-%left ifz then else
+%left else
+%nonassoc NEG
 %left "^" "%"
 %left "*" "/"
 %left "-" "+"
 %left "="
 %nonassoc sqrt
-%nonassoc NEG
 %%
 
 
@@ -47,7 +47,7 @@ E : int {IntExp $1}
   | real {RealExp $1} 
   | const {ConstExp $1} 
   | "(" E ")" {$2} 
-  | "-" E {NegExp $2} 
+  | "-" E %prec NEG{NegExp $2} 
   | sqrt E {SqrtExp $2}
   | E "+" E {BinExp AddOp $1 $3}
   | E "*" E {BinExp MultOp $1 $3}

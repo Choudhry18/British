@@ -12,7 +12,7 @@ import Data.Maybe
 %token
 
   "="                       { OpTok EqOp }
-  "+"                       { OpTok PlusOp }
+  "+"                       { OpTok AddOp }
   "-"                       { OpTok SubOp }
   "*"                       { OpTok MultOp }
   "^"                       { OpTok ExpOp }
@@ -26,23 +26,23 @@ import Data.Maybe
   "("                       { LeftPTok }
   ")"                       { RightPTok }
   sqrt                     { SqrtTok }
-  eol                       { EOLTok }
   const                    { ConstTok $$}
   int                     { IntTok $$ }
   real                    { Realtok $$}
 
 %left else
 %nonassoc NEG
-%left "^" "%"
-%left "*" "/"
 %left "-" "+"
 %left "="
 %nonassoc sqrt
+%left "*" "/"
+%left "%"
+%left "^" 
 %%
 
 
-S : E eol { ExpS $1}
-  | E ms eol {MsS $1}
+S : E { ExpS $1}
+  | E ms {MsS $1}
 E : int {IntExp $1} 
   | real {RealExp $1} 
   | const {ConstExp $1} 
@@ -60,7 +60,7 @@ E : int {IntExp $1}
   | mr {MrExp}
 {
 
-data Statement = ExpS Exp | MsS Exp  
+data Statement = ExpS Exp | MsS Exp  deriving Show
 data Exp = IntExp Integer | RealExp Double | ConstExp Const | SqrtExp Exp | BinExp Op Exp Exp | IfExp Exp Exp Exp | MrExp 
            |NegExp Exp deriving (Show, Eq)
 

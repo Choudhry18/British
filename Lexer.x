@@ -14,7 +14,7 @@ tokens :-
   \*                       { const (OpTok MultOp) }
   \^                       { const (OpTok ExpOp)}
   \/                       { const (OpTok DivOp)}
-  \%                       { const (OpTok DivOp) }
+  \%                       { const (OpTok ModOp) }
   MR                       { const MRTok }
   MS                       { const MSTok }
   ifz                      { const IfzTok}
@@ -30,8 +30,8 @@ tokens :-
   mole                     { const (ConstTok Mole)}
   $white                   ;
   [a-z][$alpha $digit]*    { VarTok }
-  \-? $digit+              { IntTok . read }
-  \-? $digit+ \. $digit+   { Realtok . read }
+  $digit+              { IntTok . read }
+  $digit+ \. $digit+   { Realtok . read }
 {
 data Token = OpTok Op| ConstTok Const | IfzTok | ThenTok | ElseTok | EOLTok | MRTok | MSTok | LeftPTok | RightPTok | SqrtTok 
              | VarTok String | IntTok Integer | Realtok Double deriving (Show, Eq) 

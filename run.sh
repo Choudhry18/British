@@ -1,4 +1,5 @@
 #!/bin/bash
 
 alex Lexer.x  
-runhaskell lexTest.hs
+happy Parser.y
+runhaskell Main.hs

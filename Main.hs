@@ -3,7 +3,6 @@ import Eval(eval)
 
 repl :: IO ()
 repl = do 
-    putStrLn "Enter line: "
     loop
     where
     loop = do
@@ -14,7 +13,7 @@ repl = do
             else do
                 case expOfStr input of
                     Nothing -> putStrLn "Error"
-                    Just (ExpS expr) -> putStrLn $ "Parsed successfully: " ++  show (eval expr)
+                    Just (ExpS expr) -> putStrLn $ show (eval expr)
                 loop
 main :: IO ()
 main = repl

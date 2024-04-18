@@ -1,5 +1,5 @@
 main: Lexer.hs Parser.hs Main.hs Eval.hs
-	ghc -o bitmask Main.hs
+	ghc -o bland Main.hs
 
 Lexer.hs: Lexer.x
 	alex Lexer.x
@@ -8,7 +8,7 @@ Parser.hs: Parser.y
 	happy Parser.y
 
 clean:
-	rm -f bitmask  
+	rm -f bland  
 	rm -f Lexer.hs
 	rm -f Parser.hs
 	rm -f *.o

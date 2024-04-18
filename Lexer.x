@@ -29,14 +29,31 @@ tokens :-
   phi                      { const (ConstTok Phi)}
   mole                     { const (ConstTok Mole)}
   $white                   ;
-  [a-z][$alpha $digit]*    { VarTok }
+  [A-Z_]+                { VarTok }
   $digit+              { IntTok . read }
   $digit+ \. $digit+   { Realtok . read }
+  supposing            {const SupposingTok}
+  hence                {const HenceTok}
+  otherwise            {const OtherwiseTok}
+  hearye               {const HearyeTok}
+  oi                   {const OiTok}  
+  is                   {const IsTok}        
+  for                  {const ForTok}
+  \/\\                 {const (OpTok AndOp)}
+  \\\/                 {const (OpTok OrOp)}
+  ">"                  {const (OpTok GOp)}
+  "<"                  {const (OpTok LOp)}
+  leq                  {const (OpTok LeqOp)}
+  geq                  {const (OpTok GeqOp)}
+  innit                {const InnitTok}
+  ace                  {const TrueTok}
+  rank                 {const FalseTok}
 {
 data Token = OpTok Op| ConstTok Const | IfzTok | ThenTok | ElseTok | EOLTok | MRTok | MSTok | LeftPTok | RightPTok | SqrtTok 
-             | VarTok String | IntTok Integer | Realtok Double deriving (Show, Eq) 
+             | VarTok String | IntTok Integer | Realtok Double | SupposingTok | HenceTok | OtherwiseTok | HearyeTok | OiTok
+             | IsTok | ForTok | InnitTok | TrueTok | FalseTok deriving (Show, Eq) 
 
-data Op = EqOp | AddOp | SubOp | MultOp | DivOp | ExpOp | ModOp deriving (Show, Eq) 
+data Op = EqOp | AddOp | SubOp | MultOp | DivOp | ExpOp | ModOp| GOp |LOp| GeqOp | LeqOp |AndOp | OrOp deriving (Show, Eq) 
 
 data Const = Pi | Fee | Phi | Mole deriving (Show, Eq) 
 

@@ -23,3 +23,5 @@ cabal.project.local~
 .ghc.environment.*
 Lexer.hs
 Parser.hs
+bland
+workspace-sp24

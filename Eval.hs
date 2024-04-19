@@ -8,6 +8,7 @@ import Distribution.Compat.Lens (_1)
 data Value = IntVal Integer | RealVal Double 
 
 instance Show Value where 
+    show :: Value -> String
     show (IntVal i) = show i
     show (RealVal r) = show r
 

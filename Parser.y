@@ -29,15 +29,24 @@ import Data.Maybe
   const                    { ConstTok $$}
   int                     { IntTok $$ }
   real                    { Realtok $$}
+  "/\\"                   {OpTok AndOp}
+  "\\/"                   {OpTok OrOp}
+  ">"                     {OpTok GOp}
+  "<"                     {OpTok LOp}
+  leq                     {OpTok LeqOp}
+  geq                     {OpTok GeqOp}
 
-%left else
+
+
 %nonassoc NEG
+%right "\\/"
+%right "/\\"
+%nonassoc "=" "<" ">" leq geq 
 %left "-" "+"
-%left "="
 %nonassoc sqrt
-%left "*" "/"
-%left "%"
-%left "^" 
+%left "%" "*" "/"
+%right "^"
+%left else
 %%
 
 
@@ -56,13 +65,19 @@ E : int {IntExp $1}
   | E "^" E {BinExp ExpOp $1 $3}
   | E "-" E {BinExp SubOp $1 $3}
   | E "%" E {BinExp ModOp $1 $3}
+  | E "/\\" E {BinExp AndOp $1 $3}
+  | E "\\/" E {BinExp OrOp $1 $3}
+  | E ">" E {BinExp GOp $1 $3}
+  | E "<" E {BinExp GOp $1 $3}
+  | E leq E {BinExp LeqOp $1 $3}
+  | E geq E {BinExp GeqOp $1 $3}
   | ifz E then E else E {IfExp $2 $4 $6}
   | mr {MrExp}
 {
 
 data Statement = ExpS Exp | MsS Exp  deriving Show
 data Exp = IntExp Integer | RealExp Double | ConstExp Const | SqrtExp Exp | BinExp Op Exp Exp | IfExp Exp Exp Exp | MrExp 
-           |NegExp Exp deriving (Show, Eq)
+           |NegExp Exp  deriving (Show, Eq)
 
 parseError :: [Token] -> Maybe a
 parseError _ = Nothing

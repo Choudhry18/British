@@ -13,7 +13,7 @@ repl = do
             else do
                 case expOfStr input of
                     Nothing -> putStrLn "Error"
-                    Just (ExpS expr) -> putStrLn $ show (eval expr)
+                    Just (ExpS expr) -> print $ show(eval expr)
                 loop
 main :: IO ()
 main = repl

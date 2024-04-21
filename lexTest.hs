@@ -1,4 +1,5 @@
 import Lexer
+import Parser
 import Data.Maybe
 
 
@@ -6,8 +7,6 @@ inputs = ["5",
           "52",
           "172.2",
           "7*3",
-          "MR",
-          "MS",
           "mole",
           "fee",
           "ifz",
@@ -16,9 +15,6 @@ inputs = ["5",
           "+ * / -",
           "ifz 3 then 35.23 else phi",
           "7 - 2 35.23 / pie",
-          "76 - (7 % 10) - 6 MS",
-          "ifz MR then sqrt 32 else pie",
-          "else ifz then MR MS - 0.0",
           "0.0 0 0.9 1.9 1.5",
           "5 = 5",
           "() ) )",

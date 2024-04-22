@@ -51,9 +51,9 @@ tokens :-
   ace                      {const (BoolTok True)}
   rank                     {const (BoolTok False)}
 {
-data Token = OpTok Op| ConstTok Const | IfzTok | ThenTok | ElseTok | EOLTok| LeftPTok | RightPTok | LeftBTok | RightBTok 
-             | SqrtTok | VarTok String | IntTok Integer | Realtok Double | SupposingTok | HenceTok | OtherwiseTok | HearyeTok | OiTok
-             | IsTok | ForTok | InnitTok | BoolTok Bool | StringTok String deriving (Show, Eq) 
+data Token = OpTok Op| ConstTok Const | VarTok String | IntTok Integer | Realtok Double | BoolTok Bool | StringTok String| IfzTok 
+            | ThenTok | ElseTok | EOLTok| LeftPTok | RightPTok | LeftBTok | RightBTok | SqrtTok | SupposingTok | HenceTok 
+            | OtherwiseTok | HearyeTok | OiTok | IsTok | ForTok | InnitTok  deriving (Show, Eq) 
 
 data Op = EqOp | AddOp | SubOp | MultOp | DivOp | ExpOp | ModOp| GOp |LOp| GeqOp | LeqOp |AndOp | OrOp deriving (Show, Eq) 
 
@@ -65,7 +65,7 @@ scanTokens str = go ('\n',[],str)
   where go inp@(_,_bs,str) =
           case alexScan inp 0 of
                 AlexEOF -> Just []
-                AlexError err -> traceShow err $ Nothing
+                AlexError err -> Nothing
                 AlexSkip  inp' len     -> go inp'
                 AlexToken inp' len act -> fmap ((act (take len str)):) (go inp')
 }

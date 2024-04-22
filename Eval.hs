@@ -5,64 +5,91 @@ import Distribution.Compat.Lens (_1)
 
 
 
-data Value = IntVal Integer | RealVal Double 
+data Value = IntVal Integer | RealVal Double | StringVal String | BoolVal Bool 
 
 instance Show Value where 
     show :: Value -> String
     show (IntVal i) = show i
     show (RealVal r) = show r
+    show (BoolVal b) = show b
+    show (StringVal s) = s
 
-negateV :: Value -> Value
-negateV (IntVal val) = IntVal(negate val)
-negateV (RealVal val) = RealVal(negate val)
+negateV :: Maybe Value -> Maybe Value
+negateV (Just(IntVal val)) = Just $ IntVal(negate val)
+negateV (Just(RealVal val)) = Just $ RealVal(negate val)
+negateV (Just(BoolVal val)) = Just $ BoolVal(not val)
+negateV _ = Nothing
 
-sqrtV :: Value -> Value
-sqrtV (RealVal val) = RealVal $ sqrt val
-sqrtV (IntVal val) = RealVal $ sqrt $ fromIntegral val
+sqrtV :: Maybe Value -> Maybe Value
+sqrtV (Just(RealVal val)) = Just $ RealVal $ sqrt val
+sqrtV (Just(IntVal val)) = Just $ RealVal $ sqrt $ fromIntegral val
+sqrtV _ = Nothing
+
+arithOp :: (Integer -> Integer -> Integer) -> (Double -> Double -> Double) -> Maybe Value -> Maybe Value -> Maybe Value
+arithOp f _ (Just(IntVal val1)) (Just(IntVal val2)) = Just $ IntVal (f val1 val2)
+arithOp _ g (Just(RealVal val1)) (Just(IntVal val2)) = Just $ RealVal (g val1 (fromIntegral val2))
+arithOp _ g (Just(IntVal val1)) (Just(RealVal val2)) = Just $ RealVal (g val2 (fromIntegral val1))
+arithOp _ g (Just(RealVal val1)) (Just(RealVal val2)) = Just $ RealVal (g val1 val2)
+arithOp _ _ _ _ = Nothing
 
 
-arithOp :: (Integer -> Integer -> Integer) -> (Double -> Double -> Double) -> Value -> Value -> Value
-arithOp f _ (IntVal val1) (IntVal val2) = IntVal (f val1 val2)
-arithOp _ g (RealVal val1) (IntVal val2) = RealVal (g val1 (fromIntegral val2))
-arithOp _ g (IntVal val1) (RealVal val2) = RealVal (g val2 (fromIntegral val1))
-arithOp _ g (RealVal val1) (RealVal val2) = RealVal (g val1 val2)
+modHelper :: Maybe Value -> Maybe Value -> Maybe Integer
+modHelper (Just val1) (Just val2) = let helper :: Maybe Value -> Maybe Integer
+                                        helper (Just(IntVal val)) = Just val 
+                                        helper (Just(RealVal val)) = Just $ truncate val
+                                        helper _ = Nothing
+                      in case (helper(Just val1), helper(Just val2)) of
+                        (Just int1, Just int2) -> Just (int1 `mod` int2)
+                        (_ , _ ) -> Nothing
 
-
-eval :: Exp -> Value
+eval :: Exp -> Maybe Value
 eval (BinExp AddOp exp1 exp2) = arithOp (+) (+) (eval exp1) (eval exp2)
 eval (BinExp SubOp exp1 exp2) = arithOp (-) (-) (eval exp1) (eval exp2) 
 eval (BinExp MultOp exp1 exp2) = arithOp (*) (*) (eval exp1) (eval exp2) 
 eval (BinExp ExpOp exp1 exp2) = arithOp (^) (**) (eval exp1) (eval exp2)
-eval (BinExp ModOp exp1 exp2) = let helper :: Value -> Integer
-                                    helper (IntVal val) = val 
-                                    helper (RealVal val) = truncate val
-                                in IntVal(helper(eval exp1) `mod` helper(eval exp2))
+eval (BinExp ModOp exp1 exp2) = let helper :: Maybe Value -> Maybe Integer
+                                    helper (Just(IntVal val)) = Just val 
+                                    helper (Just(RealVal val)) = Just $ truncate val
+                                    helper _ = Nothing
+                                in case (helper $ eval exp1, helper $ eval exp2) of
+                                   (Just val1, Just val2) -> Just $ IntVal val1
+                                   (_ , _) -> Nothing
 eval (BinExp DivOp exp1 exp2) =
     let dividend = eval exp1
         divisor = eval exp2
-        remainder = eval (BinExp ModOp exp1 exp2)
+        remainder = modHelper dividend divisor
     in case (dividend, divisor, remainder) of
-        (IntVal x, IntVal y, IntVal 0) -> IntVal(x `div` y)
-        (IntVal x, RealVal y, IntVal 0) -> IntVal(truncate(fromIntegral x/y))
-        (RealVal x, IntVal y, IntVal 0) -> IntVal(truncate(x/fromIntegral y))
-        (RealVal x, RealVal y, IntVal 0) -> IntVal(truncate(x/y))       
-        (RealVal x, RealVal y, _) -> RealVal (x / y)
-        (RealVal x, IntVal y, _) -> RealVal (x / fromIntegral y)
-        (IntVal x, RealVal y, _) -> RealVal (fromIntegral x / y)
-        (IntVal x, IntVal y, _) -> RealVal (fromIntegral x / fromIntegral y)
-eval (ConstExp Pi) = RealVal pi
-eval (ConstExp Fee) = RealVal (exp 1)
-eval (ConstExp Phi) = RealVal ((sqrt 5 + 2)/2)
-eval (ConstExp Mole) = RealVal 6.02214076e23
-eval (IntExp val) = IntVal val
-eval (RealExp val) = RealVal val
+        (Just (IntVal x), Just (IntVal y), Just 0) -> Just $ IntVal(x `div` y)
+        (Just (IntVal x), Just(RealVal y), Just 0) -> Just $ IntVal(truncate(fromIntegral x/y))
+        (Just (RealVal x), Just(IntVal y), Just 0) -> Just $ IntVal(truncate(x/fromIntegral y))
+        (Just (RealVal x), Just (RealVal y), Just 0) -> Just $ IntVal(truncate(x/y))       
+        (Just (RealVal x), Just (RealVal y), _) -> Just $ RealVal (x / y)
+        (Just (RealVal x), Just (IntVal y), _) -> Just $ RealVal (x / fromIntegral y)
+        (Just (IntVal x), Just (RealVal y), _) -> Just $ RealVal (fromIntegral x / y)
+        (Just (IntVal x), Just (IntVal y), _) -> Just $ RealVal (fromIntegral x / fromIntegral y)
+        (_ , _ , _) -> Nothing
+eval (BinExp AndOp exp1 exp2) = case eval exp1 of
+    Nothing -> Nothing
+    Just (BoolVal False) -> Just $ BoolVal False
+    Just (BoolVal True)  -> case eval exp2 of 
+        Nothing -> Nothing
+        Just (BoolVal False) -> Just (BoolVal False)
+        Just (BoolVal True)  -> Just (BoolVal True)
+eval (ConstExp Pi) = Just $ RealVal pi
+eval (ConstExp Fee) = Just $ RealVal (exp 1)
+eval (ConstExp Phi) = Just $ RealVal ((sqrt 5 + 2)/2)
+eval (ConstExp Mole) = Just $ RealVal 6.02214076e23
+eval (IntExp val) = Just $ IntVal val
+eval (RealExp val) = Just $ RealVal val
+eval (BoolExp val) = Just $ BoolVal val
+eval (StringExp val) = Just $ StringVal val
 eval (IfExp arg1 arg2 arg3) = case eval arg1 of 
-    IntVal 0 -> eval arg2
-    RealVal 0 -> eval arg2
+    Just (IntVal 0) -> eval arg2
+    Just (RealVal 0) -> eval arg2
     _ -> eval arg3
-eval MrExp = IntVal 0
 eval (NegExp exp) = negateV(eval exp)
 eval (SqrtExp exp) = sqrtV(eval exp)
+eval _ = Nothing
 
 
 

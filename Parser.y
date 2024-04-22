@@ -72,8 +72,8 @@ E : int {IntExp $1}
   | string {StringExp $1}
   | var    {VarExp $1}
   | "(" E ")" {$2} 
-  | "[" E "]" {$2}
-  | "-" E %prec NEG{NegExp $2} 
+  | "[" E "]" {NegExp $2}
+  | "-" E {NegExp $2} 
   | sqrt E {SqrtExp $2}
   | E "+" E {BinExp AddOp $1 $3}
   | E "*" E {BinExp MultOp $1 $3}
@@ -94,8 +94,8 @@ E : int {IntExp $1}
 {
 
 data Statement = ExpS Exp | VarS Exp Exp deriving Show
-data Exp = IntExp Integer | RealExp Double | ConstExp Const | SqrtExp Exp | BinExp Op Exp Exp | IfExp Exp Exp Exp | HenceExp Exp Exp Exp 
-           | MrExp |NegExp Exp |LDeclExp Exp Exp Exp | VarExp String | BoolExp Bool | StringExp String deriving (Show, Eq)
+data Exp = IntExp Integer | RealExp Double | ConstExp Const | BoolExp Bool | VarExp String | StringExp String | SqrtExp Exp | BinExp Op Exp Exp 
+           | IfExp Exp Exp Exp | HenceExp Exp Exp Exp |NegExp Exp |LDeclExp Exp Exp Exp deriving (Show, Eq)
 
 parseError :: [Token] -> Maybe a
 parseError _ = Nothing

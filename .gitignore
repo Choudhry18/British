@@ -25,3 +25,4 @@ Lexer.hs
 Parser.hs
 bland
 workspace-sp24
+Parser.info

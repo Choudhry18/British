@@ -1,5 +1,6 @@
 import Parser
-import Eval(eval)
+import Lexer
+import Eval(evalS)
 
 repl :: IO ()
 repl = do 
@@ -11,11 +12,14 @@ repl = do
         if input == ":quit"
             then putStrLn "Goodbye!"
             else do
-                case expOfStr input of
-                    Nothing -> putStrLn "Error"
-                    Just (ExpS expr) -> case eval expr of
-                        Nothing -> print "error"
-                        val -> print $ show(val)
+                case scanTokens input of
+                    Just [] -> loop
+                    Just tokens -> case parse tokens of
+                        Just statement -> case evalS [] statement of
+                            Just (_,val) -> putStrLn $ show(val)
+                            Nothing -> print "Evaluation Error"
+                        Nothing -> putStrLn "Parse Error"
+                    Nothing -> putStrLn "Lex Error"
                 loop
 main :: IO ()
 main = repl

@@ -63,7 +63,7 @@ import Data.Maybe
 
 
 S : E innit { ExpS $1}
-  | hearye var is E innit {VarS (VarExp $2) $4}
+  | hearye var is E innit {DecS $2 $4}
 E : int {IntExp $1} 
   | real {RealExp $1} 
   | const {ConstExp $1}
@@ -90,12 +90,13 @@ E : int {IntExp $1}
   | E geq E {BinExp GeqOp $1 $3}
   | ifz E then E else E {IfExp $2 $4 $6}
   | supposing E hence E otherwise E {HenceExp $2 $4 $6}
-  | oi var is E for E {LDeclExp (VarExp $2) $4 $6}
+  | oi var is E for E {LDeclExp $2 $4 $6}
 {
 
-data Statement = ExpS Exp | VarS Exp Exp deriving Show
-data Exp = IntExp Integer | RealExp Double | ConstExp Const | BoolExp Bool | VarExp String | StringExp String | SqrtExp Exp | BinExp Op Exp Exp 
-           | IfExp Exp Exp Exp | HenceExp Exp Exp Exp |NegExp Exp |LDeclExp Exp Exp Exp deriving (Show, Eq)
+type Var = String
+data Statement = ExpS Exp | DecS Var Exp deriving Show
+data Exp = IntExp Integer | RealExp Double | ConstExp Const | BoolExp Bool | VarExp Var | StringExp String | SqrtExp Exp | BinExp Op Exp Exp 
+           | IfExp Exp Exp Exp | HenceExp Exp Exp Exp |NegExp Exp |LDeclExp String Exp Exp deriving (Show, Eq)
 
 parseError :: [Token] -> Maybe a
 parseError _ = Nothing

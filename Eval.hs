@@ -47,11 +47,11 @@ compOp _ g (Just(RealVal val1)) (Just(RealVal val2)) = Just $ BoolVal (g val1 va
 compOp _ _ _ _ = Nothing
 
 modHelper :: Maybe Value -> Maybe Value -> Maybe Integer
-modHelper (Just val1) (Just val2) = let helper :: Maybe Value -> Maybe Integer
-                                        helper (Just(IntVal val)) = Just val 
-                                        helper (Just(RealVal val)) = Just $ truncate val
-                                        helper _ = Nothing
-                      in case (helper(Just val1), helper(Just val2)) of
+modHelper val1 val2 = let helper :: Maybe Value -> Maybe Integer
+                          helper (Just(IntVal val)) = Just val 
+                          helper (Just(RealVal val)) = Just $ truncate val
+                          helper _ = Nothing
+                      in case (helper val1, helper val2) of
                         (Just int1, Just int2) -> Just (int1 `mod` int2)
                         (_ , _ ) -> Nothing
 
@@ -69,13 +69,10 @@ eval env (BinExp AddOp exp1 exp2) = arithOp (+) (+) (eval env exp1) (eval env ex
 eval env (BinExp SubOp exp1 exp2) = arithOp (-) (-) (eval env exp1) (eval env exp2) 
 eval env (BinExp MultOp exp1 exp2) = arithOp (*) (*) (eval env exp1) (eval env exp2) 
 eval env (BinExp ExpOp exp1 exp2) = arithOp (^) (**) (eval env exp1) (eval env exp2)
-eval env (BinExp ModOp exp1 exp2) = let helper :: Maybe Value -> Maybe Integer
-                                        helper (Just(IntVal val)) = Just val 
-                                        helper (Just(RealVal val)) = Just $ truncate val
-                                        helper _ = Nothing
-                                in case (helper $ eval env exp1, helper $ eval env exp2) of
-                                   (Just val1, Just val2) -> Just $ IntVal val1
-                                   (_ , _) -> Nothing
+eval env (BinExp ModOp exp1 exp2) = case modHelper (eval env exp1) (eval env exp2) of
+    Just val -> Just $ IntVal val
+    Nothing -> Nothing
+
 eval env (BinExp DivOp exp1 exp2) =
     let dividend = eval env exp1
         divisor = eval env exp2

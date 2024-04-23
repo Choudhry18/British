@@ -69,13 +69,10 @@ eval env (BinExp AddOp exp1 exp2) = arithOp (+) (+) (eval env exp1) (eval env ex
 eval env (BinExp SubOp exp1 exp2) = arithOp (-) (-) (eval env exp1) (eval env exp2) 
 eval env (BinExp MultOp exp1 exp2) = arithOp (*) (*) (eval env exp1) (eval env exp2) 
 eval env (BinExp ExpOp exp1 exp2) = arithOp (^) (**) (eval env exp1) (eval env exp2)
-eval env (BinExp ModOp exp1 exp2) = let helper :: Maybe Value -> Maybe Integer
-                                        helper (Just(IntVal val)) = Just val 
-                                        helper (Just(RealVal val)) = Just $ truncate val
-                                        helper _ = Nothing
-                                in case (helper $ eval env exp1, helper $ eval env exp2) of
-                                   (Just val1, Just val2) -> Just $ IntVal val1
-                                   (_ , _) -> Nothing
+eval env (BinExp ModOp exp1 exp2) = case modHelper (eval env exp1) (eval env exp2) of
+    Just val -> Just $ IntVal val
+    Nothing -> Nothing
+
 eval env (BinExp DivOp exp1 exp2) =
     let dividend = eval env exp1
         divisor = eval env exp2

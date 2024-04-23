@@ -99,7 +99,7 @@ E : int {IntExp $1}
   | E "/\\" E {BinExp AndOp $1 $3}
   | E "\\/" E {BinExp OrOp $1 $3}
   | E ">" E {BinExp GOp $1 $3}
-  | E "<" E {BinExp GOp $1 $3}
+  | E "<" E {BinExp LOp $1 $3}
   | E leq E {BinExp LeqOp $1 $3}
   | E geq E {BinExp GeqOp $1 $3}
   | ifz E then E else E {IfExp $2 $4 $6}

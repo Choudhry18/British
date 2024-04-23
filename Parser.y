@@ -40,6 +40,14 @@ import Data.Maybe
   is                        { IsTok}
   for                       { ForTok}
   innit                     { InnitTok}
+  "#"                         { UnitTok }
+  colonize                  { ColonizeTok }
+  cheers                    { CheersTok }
+  mate                      { MateTok }
+  bloke                     { BlokeTok }
+  ","                         { AndTok}
+  ";"                         { SemiTok}
+  "=>"                        { RocketTok}
   const                     { ConstTok $$}
   int                       { IntTok $$ }
   real                      { Realtok $$}
@@ -64,6 +72,7 @@ import Data.Maybe
 
 S : E innit { ExpS $1}
   | hearye var is E innit {DecS $2 $4}
+  | colonize var is E innit {RecS $2 $4}
 E : int {IntExp $1} 
   | real {RealExp $1} 
   | const {ConstExp $1}
@@ -73,6 +82,11 @@ E : int {IntExp $1}
   | var    {VarExp $1}
   | "(" E ")" {$2} 
   | "[" E "]" {NegExp $2}
+  | mate"("E")" {MateExp $3}
+  | bloke"("E")" {BlokeExp $3}
+  | "#"            {UnitExp}
+  | cheers var "=>" E {FuncDExp $2 $4}
+  | E"("E")"     {FuncAExp $1 $3}
   | "-" E {NegExp $2} 
   | sqrt E {SqrtExp $2}
   | E "+" E {BinExp AddOp $1 $3}
@@ -94,9 +108,10 @@ E : int {IntExp $1}
 {
 
 type Var = String
-data Statement = ExpS Exp | DecS Var Exp deriving Show
-data Exp = IntExp Integer | RealExp Double | ConstExp Const | BoolExp Bool | VarExp Var | StringExp String | SqrtExp Exp | BinExp Op Exp Exp 
-           | IfExp Exp Exp Exp | HenceExp Exp Exp Exp |NegExp Exp |LDeclExp String Exp Exp deriving (Show, Eq)
+data Statement = ExpS Exp | DecS Var Exp | RecS Var Exp deriving Show
+data Exp = IntExp Integer | RealExp Double | ConstExp Const | BoolExp Bool | VarExp Var | StringExp String | SqrtExp Exp 
+           | BinExp Op Exp Exp | IfExp Exp Exp Exp | HenceExp Exp Exp Exp |NegExp Exp |LDeclExp String Exp Exp | MateExp Exp 
+           | BlokeExp Exp | UnitExp | FuncDExp String Exp | FuncAExp Exp Exp deriving (Show, Eq)
 
 parseError :: [Token] -> Maybe a
 parseError _ = Nothing

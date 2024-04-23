@@ -47,11 +47,11 @@ compOp _ g (Just(RealVal val1)) (Just(RealVal val2)) = Just $ BoolVal (g val1 va
 compOp _ _ _ _ = Nothing
 
 modHelper :: Maybe Value -> Maybe Value -> Maybe Integer
-modHelper (Just val1) (Just val2) = let helper :: Maybe Value -> Maybe Integer
-                                        helper (Just(IntVal val)) = Just val 
-                                        helper (Just(RealVal val)) = Just $ truncate val
-                                        helper _ = Nothing
-                      in case (helper(Just val1), helper(Just val2)) of
+modHelper val1 val2 = let helper :: Maybe Value -> Maybe Integer
+                          helper (Just(IntVal val)) = Just val 
+                          helper (Just(RealVal val)) = Just $ truncate val
+                          helper _ = Nothing
+                      in case (helper val1, helper val2) of
                         (Just int1, Just int2) -> Just (int1 `mod` int2)
                         (_ , _ ) -> Nothing
 

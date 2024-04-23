@@ -38,6 +38,15 @@ tokens :-
   is                       { const IsTok}        
   for                      { const ForTok}
   innit                    { const InnitTok}
+  colonize                 { const ColonizeTok}
+  cheers                   { const CheersTok }
+  mate                     { const MateTok}
+  bloke                    { const BlokeTok}
+  ","                        { const ComTok}
+  ";"                        { const SemiTok}
+  and                      { const AndTok }
+  "#"                        { const UnitTok }
+  =>                       { const RocketTok}
   pie                      { const (ConstTok Pi)}
   fee                      { const (ConstTok Fee)}
   phi                      { const (ConstTok Phi)}
@@ -53,7 +62,8 @@ tokens :-
 {
 data Token = OpTok Op| ConstTok Const | VarTok String | IntTok Integer | Realtok Double | BoolTok Bool | StringTok String| IfzTok 
             | ThenTok | ElseTok | EOLTok| LeftPTok | RightPTok | LeftBTok | RightBTok | SqrtTok | SupposingTok | HenceTok 
-            | OtherwiseTok | HearyeTok | OiTok | IsTok | ForTok | InnitTok  deriving (Show, Eq) 
+            | OtherwiseTok | HearyeTok | OiTok | IsTok | ForTok | InnitTok | ColonizeTok | CheersTok | MateTok |BlokeTok 
+            | ComTok | SemiTok | AndTok | UnitTok | RocketTok  deriving (Show, Eq) 
 
 data Op = EqOp | AddOp | SubOp | MultOp | DivOp | ExpOp | ModOp| GOp |LOp| GeqOp | LeqOp |AndOp | OrOp deriving (Show, Eq) 
 

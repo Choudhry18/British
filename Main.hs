@@ -4,22 +4,25 @@ import Eval(evalS)
 
 repl :: IO ()
 repl = do 
-    loop
+    loop []
     where
-    loop = do
-        putStr "> "
+    loop env = do
         input <- getLine
         if input == ":quit"
             then putStrLn "Goodbye!"
             else do
                 case scanTokens input of
-                    Just [] -> loop
+                    Just [] -> loop env
                     Just tokens -> case parse tokens of
-                        Just statement -> case evalS [] statement of
-                            Just (_,val) -> putStrLn $ show(val)
+                        Just statement -> case evalS env statement of  -- Pass env as the first argument
+                            Just (newEnv, val) -> do
+                                putStr "> "
+                                putStrLn $ show val
+                                loop newEnv  -- Pass newEnv to the next iteration
                             Nothing -> print "Evaluation Error"
                         Nothing -> putStrLn "Parse Error"
                     Nothing -> putStrLn "Lex Error"
-                loop
+                loop env
+
 main :: IO ()
 main = repl

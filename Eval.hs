@@ -64,6 +64,7 @@ evalS env (DecS var exp) = case eval env exp of
     Just val -> Just ((var,val) : filter (\(x,_) -> x /= var) env, val)
 
 eval :: Env -> Exp -> Maybe Value
+--Arithmetic Expression
 eval env (BinExp AddOp exp1 exp2) = arithOp (+) (+) (eval env exp1) (eval env exp2)
 eval env (BinExp SubOp exp1 exp2) = arithOp (-) (-) (eval env exp1) (eval env exp2) 
 eval env (BinExp MultOp exp1 exp2) = arithOp (*) (*) (eval env exp1) (eval env exp2) 
@@ -89,6 +90,8 @@ eval env (BinExp DivOp exp1 exp2) =
         (Just (IntVal x), Just (RealVal y), _) -> Just $ RealVal (fromIntegral x / y)
         (Just (IntVal x), Just (IntVal y), _) -> Just $ RealVal (fromIntegral x / fromIntegral y)
         (_ , _ , _) -> Nothing
+
+--Comparison Expressions
 eval env (BinExp GOp exp1 exp2) = compOp (>) (>) (eval env exp1) (eval env exp2)
 eval env (BinExp LOp exp1 exp2) = compOp (<) (<) (eval env exp1) (eval env exp2)
 eval env (BinExp GeqOp exp1 exp2) = compOp (>=) (>=) (eval env exp1) (eval env exp2)
@@ -101,6 +104,8 @@ eval env (BinExp EqOp exp1 exp2) = case (eval env exp1, eval env exp2) of
     (Just(BoolVal _), Just(IntVal _)) -> Just $ BoolVal False
     (Just(BoolVal _), Just(RealVal _)) -> Just $ BoolVal False
     (x, y) -> compOp (==) (==) x y
+
+--Logical Expressions
 eval env (BinExp AndOp exp1 exp2) = case eval env exp1 of
     Just (BoolVal False) -> Just $ BoolVal False
     Just (BoolVal True)  -> case eval env exp2 of 
@@ -115,14 +120,20 @@ eval env (BinExp OrOp exp1 exp2) = case eval env exp1 of
         Just (BoolVal False) -> Just $ BoolVal False
         _ -> Nothing
     _ -> Nothing
+
+--Constants
 eval env (ConstExp Pi) = Just $ RealVal pi
 eval env (ConstExp Fee) = Just $ RealVal (exp 1)
 eval env (ConstExp Phi) = Just $ RealVal ((sqrt 5 + 2)/2)
 eval env (ConstExp Mole) = Just $ RealVal 6.02214076e23
+
+--Values
 eval env (IntExp val) = Just $ IntVal val
 eval env (RealExp val) = Just $ RealVal val
 eval env (BoolExp val) = Just $ BoolVal val
 eval env (StringExp val) = Just $ StringVal val
+eval env (VarExp val) = lookupEnv val env
+--Conditional
 eval env (IfExp arg1 arg2 arg3) = case eval env arg1 of 
     Just (IntVal 0) -> eval env arg2
     Just (RealVal 0) -> eval env arg2
@@ -132,8 +143,14 @@ eval env (HenceExp arg1 arg2 arg3) = case eval env arg1 of
     Just (BoolVal True) -> eval env arg2
     Just (BoolVal False) -> eval env arg3
     _ -> Nothing
+
+--Others
 eval env (NegExp exp) = negateV(eval env exp)
 eval env (SqrtExp exp) = sqrtV(eval env exp)
+eval env (LDeclExp var val exp) = case eval env val of
+    Just x -> eval ((var,x):env) exp
+    _ -> Nothing
+
 eval env _ = Nothing
 
 

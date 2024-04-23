@@ -103,6 +103,7 @@ eval env (BinExp EqOp exp1 exp2) = case (eval env exp1, eval env exp2) of
     (Just(BoolVal True), Just(BoolVal False)) -> Just $ BoolVal False
     (Just(BoolVal _), Just(IntVal _)) -> Just $ BoolVal False
     (Just(BoolVal _), Just(RealVal _)) -> Just $ BoolVal False
+    (Just(StringVal lstring),Just(StringVal rstring)) -> Just $ BoolVal (lstring == rstring)
     (x, y) -> compOp (==) (==) x y
 
 --Logical Expressions

@@ -15,6 +15,7 @@ tokens :-
   \^                       { const (OpTok ExpOp)}
   \/                       { const (OpTok DivOp)}
   \%                       { const (OpTok ModOp) }
+  \\                       { const SndTok}
   \/\\                     { const (OpTok AndOp)}
   \\\/                     { const (OpTok OrOp)}
   ">"                      { const (OpTok GOp)}
@@ -63,7 +64,7 @@ tokens :-
 data Token = OpTok Op| ConstTok Const | VarTok String | IntTok Integer | Realtok Double | BoolTok Bool | StringTok String| IfzTok 
             | ThenTok | ElseTok | EOLTok| LeftPTok | RightPTok | LeftBTok | RightBTok | SqrtTok | SupposingTok | HenceTok 
             | OtherwiseTok | HearyeTok | OiTok | IsTok | ForTok | InnitTok | ColonizeTok | CheersTok | MateTok |BlokeTok 
-            | ComTok | SemiTok | AndTok | UnitTok | RocketTok  deriving (Show, Eq) 
+            | ComTok | SemiTok | AndTok | UnitTok |SndTok | RocketTok  deriving (Show, Eq) 
 
 data Op = EqOp | AddOp | SubOp | MultOp | DivOp | ExpOp | ModOp| GOp |LOp| GeqOp | LeqOp |AndOp | OrOp deriving (Show, Eq) 
 

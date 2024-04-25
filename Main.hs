@@ -1,6 +1,6 @@
 import Parser
 import Lexer
-import Eval (evalS)
+import Eval
 
 repl :: IO ()
 repl = loop [] 1
@@ -13,17 +13,16 @@ repl = loop [] 1
                     case scanTokens input of
                         Just [] -> loop env (count + 1)
                         Just tokens -> case parse tokens of
-                            Just statement@(ExpS _) -> case evalS env statement of
+                            Just statement -> case evalS env statement of
+                                Just (newEnv, UnitVal) -> do
+                                    loop newEnv (count + 1)
                                 Just (newEnv, val) -> do
                                     putStr "> "
                                     putStrLn $ show val
                                     loop newEnv (count + 1)
-                                Nothing -> putStrLn $ "Evaluation Error on line " ++ show count
-                            Just declaration@(DecS _ _) -> case evalS env declaration of
-                                Just (newEnv, _) -> loop newEnv (count+1)
-                                Nothing -> putStrLn $ "Evaluation Error on line " ++ show count
-                            Nothing -> putStrLn $ "Parse Error on line " ++ show count
-                        Nothing -> putStrLn $ "Lex Error on line " ++ show count
+                                Nothing -> putStrLn $ "Knobhead made an error on " ++ show count
+                            Nothing -> putStrLn $ "Bonkers on line " ++ show count
+                        Nothing -> putStrLn $ "Loony on line " ++ show count
                     loop env (count + 1)
 
 main :: IO ()

@@ -22,6 +22,8 @@ import Data.Maybe
   "\\/"                     { OpTok OrOp}
   ">"                       { OpTok GOp}
   "<"                       { OpTok LOp}
+  "\\"                      { SndTok } 
+  ","                       { ComTok}
   leq                       { OpTok LeqOp}
   geq                       { OpTok GeqOp}
   ifz                       { IfzTok}
@@ -45,7 +47,6 @@ import Data.Maybe
   cheers                    { CheersTok }
   mate                      { MateTok }
   bloke                     { BlokeTok }
-  ","                         { AndTok}
   ";"                         { SemiTok}
   "=>"                        { RocketTok}
   const                     { ConstTok $$}
@@ -61,12 +62,14 @@ import Data.Maybe
 %nonassoc NEG
 %right "\\/"
 %right "/\\"
+%left "=>"
 %nonassoc "=" "<" ">" leq geq 
 %left "-" "+"
 %nonassoc sqrt
 %left "%" "*" "/"
 %right "^"
 %left else otherwise
+%left "(" ")"
 %%
 
 
@@ -87,6 +90,7 @@ E : int {IntExp $1}
   | "#"            {UnitExp}
   | cheers var "=>" E {FuncDExp $2 $4}
   | E"("E")"     {FuncAExp $1 $3}
+  | "/"E"," E"\\" {PairExp $2 $4}
   | "-" E {NegExp $2} 
   | sqrt E {SqrtExp $2}
   | E "+" E {BinExp AddOp $1 $3}
@@ -111,7 +115,7 @@ type Var = String
 data Statement = ExpS Exp | DecS Var Exp | RecS Var Exp deriving Show
 data Exp = IntExp Integer | RealExp Double | ConstExp Const | BoolExp Bool | VarExp Var | StringExp String | SqrtExp Exp 
            | BinExp Op Exp Exp | IfExp Exp Exp Exp | HenceExp Exp Exp Exp |NegExp Exp |LDeclExp String Exp Exp | MateExp Exp 
-           | BlokeExp Exp | UnitExp | FuncDExp String Exp | FuncAExp Exp Exp deriving (Show, Eq)
+           | BlokeExp Exp | UnitExp | FuncDExp String Exp | FuncAExp Exp Exp | PairExp Exp Exp deriving (Show, Eq)
 
 parseError :: [Token] -> Maybe a
 parseError _ = Nothing

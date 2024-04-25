@@ -80,7 +80,7 @@ evalS env (DecS var exp) = case eval env exp of
 evalS env (RecS var exp) =
     let newEnv = updateEnv var newVal env
         newVal = fromMaybe UnitVal (eval newEnv exp)
-    in Just (newEnv, newVal)
+    in Just (newEnv, UnitVal)
 evalS _ _ = Nothing
 
 eval :: Env -> Exp -> Maybe Value

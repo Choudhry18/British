@@ -56,13 +56,19 @@ import Data.Maybe
   rank                      { BoolTok False}
   var                       { VarTok $$}
   string                    { StringTok $$}
+  display                   { DisplayTok }
+  "=="                        { MutateTok }
+  whilst                    { WhileTok}
+  doeth                     { DoTok}
+  "|"                       { DeRefTok}
+  "~"                       { SeqTok }
 
-
+%nonassoc "~" display doeth
 %nonassoc for
 %nonassoc NEG
 %right "\\/"
 %right "/\\"
-%left "=>"
+%left "=>" "=="
 %nonassoc "=" "<" ">" leq geq 
 %left "-" "+"
 %nonassoc sqrt
@@ -109,6 +115,11 @@ E : int {IntExp $1}
   | ifz E then E else E {IfExp $2 $4 $6}
   | supposing E hence E otherwise E {HenceExp $2 $4 $6}
   | oi var is E for E {LDeclExp $2 $4 $6}
+  | display E {DisplayExp $2}
+  | "|"E"|"   {DeRefExp $2}
+  | E "==" E    {MutExp $1 $2}
+  | E "~" E     {SeqExp $1 $2}
+  | whilst E doeth E {WhileExp $1 $2}
 {
 
 type Var = String

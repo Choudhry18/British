@@ -58,17 +58,16 @@ import Data.Maybe
   string                    { StringTok $$}
 
 
-%nonassoc for
-%nonassoc NEG
-%right "\\/"
-%right "/\\"
-%left "=>"
+
+%left else otherwise for
+%left "=>" 
+%right "\\/" "/\\"
 %nonassoc "=" "<" ">" leq geq 
 %left "-" "+"
 %nonassoc sqrt
 %left "%" "*" "/"
 %right "^"
-%left else otherwise
+%nonassoc NEG
 %left "(" ")"
 %%
 
@@ -91,7 +90,7 @@ E : int {IntExp $1}
   | cheers var "=>" E {FuncDExp $2 $4}
   | E"("E")"     {FuncAExp $1 $3}
   | "/"E"," E"\\" {PairExp $2 $4}
-  | "-" E {NegExp $2} 
+  | "-" E %prec NEG{NegExp $2} 
   | sqrt E {SqrtExp $2}
   | E "+" E {BinExp AddOp $1 $3}
   | E "*" E {BinExp MultOp $1 $3}

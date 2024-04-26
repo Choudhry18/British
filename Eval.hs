@@ -13,7 +13,7 @@ lookupEnv = lookup
 updateEnv :: Var -> Value -> Env -> Env
 updateEnv var val env = (var,val) : filter (\(x,_) -> x /= var) env
 data Value = IntVal Integer | RealVal Double | StringVal String | BoolVal Bool | PairVal Value Value | UnitVal
-             | FuncVal String Exp Env deriving Eq
+             | FuncVal String Exp Env 
 
 instance Show Value where
     show :: Value -> String
@@ -25,6 +25,19 @@ instance Show Value where
     show (PairVal fst snd) = "/" ++ show fst ++ ", " ++ show snd ++ "\\"
     show UnitVal = "#"
     show (FuncVal s _ _) = s
+    show _ = "undefined show"
+
+instance Eq Value where 
+    (==) :: Value -> Value -> Bool
+    (BoolVal val1) == (BoolVal val2) = val1 == val2
+    (IntVal val1)  == (IntVal val2) = val1 == val2
+    (IntVal val1)  == (RealVal val2) = fromIntegral val1 == val2
+    (RealVal val1) == (IntVal val2) = val1 == fromIntegral val2
+    (RealVal val1) == (RealVal val2) = val1 == val2
+    (StringVal val1) == (StringVal val2) = val1 == val2
+    (PairVal lval1 rval1) == (PairVal lval2 rval2) = (lval1 == lval2) && (rval1 == rval2)
+    UnitVal == UnitVal = True
+    _ == _ = False
 
 
 negateV :: Maybe Value -> Maybe Value
@@ -114,18 +127,8 @@ eval env (BinExp LOp exp1 exp2) = compOp (<) (<) (eval env exp1) (eval env exp2)
 eval env (BinExp GeqOp exp1 exp2) = compOp (>=) (>=) (eval env exp1) (eval env exp2)
 eval env (BinExp LeqOp exp1 exp2) = compOp (<=) (<=) (eval env exp1) (eval env exp2)
 eval env (BinExp EqOp exp1 exp2) = case (eval env exp1, eval env exp2) of
-    (Just(BoolVal True), Just(BoolVal True)) -> Just $ BoolVal True
-    (Just(BoolVal False), Just(BoolVal False)) -> Just $ BoolVal True
-    (Just(BoolVal False), Just(BoolVal True)) -> Just $ BoolVal False
-    (Just(BoolVal True), Just(BoolVal False)) -> Just $ BoolVal False
-    (Just(BoolVal _), Just(IntVal _)) -> Just $ BoolVal False
-    (Just(BoolVal _), Just(RealVal _)) -> Just $ BoolVal False
-    (Just(StringVal lstring),Just(StringVal rstring)) -> Just $ BoolVal (lstring == rstring)
-    (Just UnitVal, Just UnitVal) -> Just $ BoolVal True
-    (Just (PairVal valL1 valL2), Just (PairVal valR1 valR2)) -> Just $ BoolVal $ (valL1 == valR1) && (valL2 == valR2)
-    (Just (FuncVal {}), _) -> Just $ BoolVal False
-    (_, Just (FuncVal {})) -> Just $ BoolVal False
-    (x, y) -> compOp (==) (==) x y
+    (Just val1, Just val2) ->  Just $ BoolVal $ val1 == val2
+    _ -> Nothing
 
 --Logical Expressions
 eval env (BinExp AndOp exp1 exp2) = case eval env exp1 of

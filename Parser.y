@@ -59,8 +59,9 @@ import Data.Maybe
 
 
 
-%left else otherwise for
+
 %left "=>" 
+%left else otherwise for
 %right "\\/" "/\\"
 %nonassoc "=" "<" ">" leq geq 
 %left "-" "+"

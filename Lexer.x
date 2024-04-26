@@ -58,13 +58,20 @@ tokens :-
   [A-Z_]+                  { VarTok }
   $digit+                  { IntTok . read }
   $digit+ \. $digit+       { Realtok . read }
-  ace                      {const (BoolTok True)}
-  rank                     {const (BoolTok False)}
+  ace                      { const (BoolTok True)}
+  rank                     { const (BoolTok False)}
+  display                  { const DisplayTok}
+  ==                       { const MutateTok }
+  whilst                   { const WhileTok }
+  doeth                    { const DoTok }
+  "|"                      { const DeRefTok }
+  "~"                      { const SeqTok }
 {
 data Token = OpTok Op| ConstTok Const | VarTok String | IntTok Integer | Realtok Double | BoolTok Bool | StringTok String| IfzTok 
             | ThenTok | ElseTok | EOLTok| LeftPTok | RightPTok | LeftBTok | RightBTok | SqrtTok | SupposingTok | HenceTok 
             | OtherwiseTok | HearyeTok | OiTok | IsTok | ForTok | InnitTok | ColonizeTok | CheersTok | MateTok |BlokeTok 
-            | ComTok | SemiTok | AndTok | UnitTok |SndTok | RocketTok  deriving (Show, Eq) 
+            | ComTok | SemiTok | AndTok | UnitTok |SndTok | RocketTok | DisplayTok | MutateTok | WhileTok | DoTok
+            | DeRefTok | SeqTok deriving (Show, Eq) 
 
 data Op = EqOp | AddOp | SubOp | MultOp | DivOp | ExpOp | ModOp| GOp |LOp| GeqOp | LeqOp |AndOp | OrOp deriving (Show, Eq) 
 

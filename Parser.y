@@ -89,7 +89,7 @@ E : int {IntExp $1}
   | string {StringExp $1}
   | var    {VarExp $1}
   | "(" E ")" {$2} 
-  | "[" E "]" {NegExp $2}
+  | "[" E "]" {NegBExp $2}
   | mate"("E")" {MateExp $3}
   | bloke"("E")" {BlokeExp $3}
   | "#"            {UnitExp}
@@ -116,16 +116,17 @@ E : int {IntExp $1}
   | oi var is E for E {LDeclExp $2 $4 $6}
   | display E {DisplayExp $2}
   | "|"E"|"   {DeRefExp $2}
-  | E "==" E    {MutExp $1 $2}
-  | E "~" E     {SeqExp $1 $2}
-  | whilst E doeth E {WhileExp $1 $2}
+  | E "==" E    {MutExp $1 $3}
+  | E "~" E     {SeqExp $1 $3}
+  | whilst E doeth E {WhileExp $2 $4}
 {
 
 type Var = String
 data Statement = ExpS Exp | DecS Var Exp | RecS Var Exp deriving Show
 data Exp = IntExp Integer | RealExp Double | ConstExp Const | BoolExp Bool | VarExp Var | StringExp String | SqrtExp Exp 
-           | BinExp Op Exp Exp | IfExp Exp Exp Exp | HenceExp Exp Exp Exp |NegExp Exp |LDeclExp String Exp Exp | MateExp Exp 
-           | BlokeExp Exp | UnitExp | FuncDExp String Exp | FuncAExp Exp Exp | PairExp Exp Exp deriving (Show, Eq)
+           | BinExp Op Exp Exp | IfExp Exp Exp Exp | HenceExp Exp Exp Exp |NegExp Exp |NegBExp Exp |LDeclExp String Exp Exp | MateExp Exp 
+           | BlokeExp Exp | UnitExp | FuncDExp String Exp | FuncAExp Exp Exp | PairExp Exp Exp | DisplayExp Exp | DeRefExp Exp 
+           | MutExp Exp Exp | WhileExp Exp Exp | SeqExp Exp Exp deriving (Show, Eq)
 
 parseError :: [Token] -> Maybe a
 parseError _ = Nothing

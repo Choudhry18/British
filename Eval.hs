@@ -6,14 +6,14 @@ import GHC.Real (underflowError)
 import Data.Text.Array (new)
 import Data.Maybe
 
-type Env = [(Var, Value)]
-lookupEnv :: Var -> Env -> Maybe Value
-lookupEnv = lookup
 
-updateEnv :: Var -> Value -> Env -> Env
-updateEnv var val env = (var,val) : filter (\(x,_) -> x /= var) env
+type Env = [(Var, Value)]
+data Context = Context {env :: Env, store :: Store} deriving (Eq, Show)
+type Location = Integer
+type Store = [(Location, Value)]
+
 data Value = IntVal Integer | RealVal Double | StringVal String | BoolVal Bool | PairVal Value Value | UnitVal
-             | FuncVal String Exp Env 
+             | FuncVal String Exp Env | RefVal Location
 
 instance Show Value where
     show :: Value -> String
@@ -25,9 +25,10 @@ instance Show Value where
     show (PairVal fst snd) = "/" ++ show fst ++ ", " ++ show snd ++ "\\"
     show UnitVal = "#"
     show (FuncVal s _ _) = s
+    show (RefVal loc) = "Error trying to show a reference value"
     show _ = "undefined show"
 
-instance Eq Value where 
+instance Eq Value where
     (==) :: Value -> Value -> Bool
     (BoolVal val1) == (BoolVal val2) = val1 == val2
     (IntVal val1)  == (IntVal val2) = val1 == val2
@@ -37,167 +38,261 @@ instance Eq Value where
     (StringVal val1) == (StringVal val2) = val1 == val2
     (PairVal lval1 rval1) == (PairVal lval2 rval2) = (lval1 == lval2) && (rval1 == rval2)
     UnitVal == UnitVal = True
+    (RefVal val1) == (RefVal val2) = val1 == val2
     _ == _ = False
 
 
-negateV :: Maybe Value -> Maybe Value
-negateV (Just(IntVal val)) = Just $ IntVal (negate val)
-negateV (Just(RealVal val)) = Just $ RealVal (negate val)
-negateV (Just(BoolVal val)) = Just $ BoolVal (not val)
-negateV _ = Nothing
+lookupEnv :: Var -> Env -> Maybe Value
+lookupEnv = lookup
 
-sqrtV :: Maybe Value -> Maybe Value
-sqrtV (Just(RealVal val)) = Just $ RealVal $ sqrt val
-sqrtV (Just(IntVal val)) = Just $ RealVal $ sqrt $ fromIntegral val
-sqrtV _ = Nothing
+lookupStore :: Location -> Store -> Maybe Value
+lookupStore = lookup
 
-arithOp :: (Integer -> Integer -> Integer) -> (Double -> Double -> Double) -> Maybe Value -> Maybe Value -> Maybe Value
-arithOp f _ (Just(IntVal val1)) (Just(IntVal val2)) = Just $ IntVal (f val1 val2)
-arithOp _ g (Just(RealVal val1)) (Just(IntVal val2)) = Just $ RealVal (g val1 (fromIntegral val2))
-arithOp _ g (Just(IntVal val1)) (Just(RealVal val2)) = Just $ RealVal (g val2 (fromIntegral val1))
-arithOp _ g (Just(RealVal val1)) (Just(RealVal val2)) = Just $ RealVal (g val1 val2)
+newLoc :: Store -> Location
+newLoc [] = 0
+newLoc sto = (fst $ head sto) + 1
+
+
+updateEnv :: Var -> Value -> Env -> Env
+updateEnv var val env = (var,val) : filter (\(x,_) -> x /= var) env
+
+updateStore :: Location -> Value -> Store -> Store
+updateStore loc val store = (loc,val) : filter (\(x,_) -> x /= loc) store
+
+
+sqrtV :: Value -> Value
+sqrtV (RealVal val) = RealVal $ sqrt val
+sqrtV (IntVal val) = RealVal $ sqrt $ fromIntegral val
+
+arithOp :: (Integer -> Integer -> Integer) -> (Double -> Double -> Double) -> Value -> Value -> Maybe Value
+arithOp f _ (IntVal val1) (IntVal val2) = Just $ IntVal (f val1 val2)
+arithOp _ g (RealVal val1) (IntVal val2) = Just $ RealVal (g val1 (fromIntegral val2))
+arithOp _ g (IntVal val1) (RealVal val2) = Just $ RealVal (g val2 (fromIntegral val1))
+arithOp _ g (RealVal val1) (RealVal val2) = Just $ RealVal (g val1 val2)
 arithOp _ _ _ _ = Nothing
 
-compOp :: (Integer -> Integer -> Bool) -> (Double -> Double -> Bool) -> Maybe Value -> Maybe Value -> Maybe Value
-compOp f g (Just(IntVal val1)) (Just(IntVal val2)) = Just $ BoolVal (f val1 val2)
-compOp _ g (Just(RealVal val1)) (Just(IntVal val2)) = Just $ BoolVal (g val1 (fromIntegral val2))
-compOp _ g (Just(IntVal val1)) (Just(RealVal val2)) = Just $ BoolVal (g (fromIntegral val1) val2)
-compOp _ g (Just(RealVal val1)) (Just(RealVal val2)) = Just $ BoolVal (g val1 val2)
+compOp :: (Integer -> Integer -> Bool) -> (Double -> Double -> Bool) -> Value -> Value ->  Maybe Value
+compOp f g (IntVal val1) (IntVal val2) = Just (BoolVal (f val1 val2))
+compOp _ g (RealVal val1) (IntVal val2) = Just (BoolVal (g val1 (fromIntegral val2)))
+compOp _ g (IntVal val1) (RealVal val2) = Just (BoolVal (g (fromIntegral val1) val2))
+compOp _ g (RealVal val1) (RealVal val2) = Just (BoolVal (g val1 val2))
 compOp _ _ _ _ = Nothing
 
-modHelper :: Maybe Value -> Maybe Value -> Maybe Integer
-modHelper val1 val2 = let helper :: Maybe Value -> Maybe Integer
-                          helper (Just(IntVal val)) = Just val
-                          helper (Just(RealVal val)) = Just $ truncate val
+modHelper :: Value -> Value -> Maybe Integer
+modHelper val1 val2 = let helper :: Value -> Maybe Integer
+                          helper (IntVal val) = Just val
+                          helper (RealVal val) = Just $ truncate val
                           helper _ = Nothing
                       in case (helper val1, helper val2) of
                         (Just int1, Just int2) -> Just (int1 `mod` int2)
                         (_ , _ ) -> Nothing
 
-appMaybe:: (a -> Maybe b) -> Maybe a -> Maybe b --built in as fMap
-appMaybe f a = do av <- a
-                  f av
 
-appMaybe2 :: (a -> b -> Maybe c) -> Maybe a -> Maybe b -> Maybe c
-appMaybe2 f a b = do av <- a
-                     bv <- b
-                     f av bv
-
-evalS :: Env -> Statement -> Maybe (Env,Value)
-evalS env (ExpS exp) = case eval env exp of
-    Just val -> Just (env, val)
+evalD :: Context -> Statement -> Maybe (Value, Context)
+evalD context (ExpS exp) = case evalE context exp of
+    Just (val, sto) -> Just (val, context {store = sto} )
     Nothing -> Nothing
-evalS env (DecS var exp) = case eval env exp of
-    Nothing -> Nothing
-    Just val -> Just (updateEnv var val env, UnitVal)
-evalS env (RecS var exp) =
-    let newEnv = updateEnv var newVal env
-        newVal = fromMaybe UnitVal (eval newEnv exp)
-    in Just (newEnv, UnitVal)
-evalS _ _ = Nothing
+evalD context (DecS var exp) = do
+    (val, nStore) <- evalE context exp
+    Just (UnitVal, context{env = updateEnv var val (env context), store = nStore})
 
-eval :: Env -> Exp -> Maybe Value
+--Unsure if to add store from the recursive calls
+evalD context (RecS var exp) =
+    let newEnv = updateEnv var newVal (env context)
+        newContext = context {env =newEnv, store=sto}
+        (newVal, sto) = fromMaybe (UnitVal,store context) (evalE newContext exp)
+    in Just (UnitVal, newContext)
+evalD _ _ = Nothing
+
+evalE :: Context -> Exp -> Maybe (Value, Store)
 --Arithmetic Expression
-eval env (BinExp AddOp exp1 exp2) = arithOp (+) (+) (eval env exp1) (eval env exp2)
-eval env (BinExp SubOp exp1 exp2) = arithOp (-) (-) (eval env exp1) (eval env exp2)
-eval env (BinExp MultOp exp1 exp2) = arithOp (*) (*) (eval env exp1) (eval env exp2)
-eval env (BinExp ExpOp exp1 exp2) = arithOp (^) (**) (eval env exp1) (eval env exp2)
-eval env (BinExp ModOp exp1 exp2) = case modHelper (eval env exp1) (eval env exp2) of
-    Just val -> Just $ IntVal val
-    Nothing -> Nothing
+evalE context (BinExp AddOp exp1 exp2) = do
+    (val1,s1) <- evalE context exp1
+    (val2,s2) <- evalE context{store = s1} exp2
+    ans <- arithOp (+) (+) val1 val2
+    Just (ans, s2)
+evalE context (BinExp SubOp exp1 exp2) = do
+    (val1,s1) <- evalE context exp1
+    (val2,s2) <- evalE context{store = s1} exp2
+    ans <- arithOp (-) (-) val1 val2
+    Just (ans, s2)
+evalE context (BinExp MultOp exp1 exp2) = do
+    (val1,s1) <- evalE context exp1
+    (val2,s2) <- evalE context{store = s1} exp2
+    ans <- arithOp (*) (*) val1 val2
+    Just (ans, s2)
+evalE context (BinExp ExpOp exp1 exp2) = do
+    (val1,s1) <- evalE context exp1
+    (val2,s2) <- evalE context{store = s1} exp2
+    ans <- arithOp (^) (**) val1 val2
+    Just (ans, s2)
+evalE context (BinExp ModOp exp1 exp2) = do
+    (val1,s1) <- evalE context exp1
+    (val2,s2) <- evalE context{store = s1} exp2
+    ans <- modHelper val1 val2
+    Just (IntVal ans, s2)
 
-eval env (BinExp DivOp exp1 exp2) =
-    let dividend = eval env exp1
-        divisor = eval env exp2
-        remainder = modHelper dividend divisor
-    in case (dividend, divisor, remainder) of
-        (Just (IntVal x), Just (IntVal y), Just 0) -> Just $ IntVal (x `div` y)
-        (Just (IntVal x), Just(RealVal y), Just 0) -> Just $ IntVal (truncate (fromIntegral x/y))
-        (Just (RealVal x), Just(IntVal y), Just 0) -> Just $ IntVal (truncate (x/fromIntegral y))
-        (Just (RealVal x), Just (RealVal y), Just 0) -> Just $ IntVal (truncate (x/y))
-        (Just (RealVal x), Just (RealVal y), _) -> Just $ RealVal (x / y)
-        (Just (RealVal x), Just (IntVal y), _) -> Just $ RealVal (x / fromIntegral y)
-        (Just (IntVal x), Just (RealVal y), _) -> Just $ RealVal (fromIntegral x / y)
-        (Just (IntVal x), Just (IntVal y), _) -> Just $ RealVal (fromIntegral x / fromIntegral y)
+evalE context (BinExp DivOp exp1 exp2) = do
+    (dividend, s1) <- evalE context exp1
+    (divisor, s2) <- evalE context{store = s1} exp2
+    remainder <- modHelper dividend divisor
+    case (dividend, divisor, remainder) of
+        (IntVal x, IntVal y, 0) -> Just (IntVal (x `div` y), s2)
+        (IntVal x, RealVal y, 0) -> Just (IntVal (truncate (fromIntegral x/y)), s2)
+        (RealVal x, IntVal y, 0) -> Just (IntVal (truncate (x/fromIntegral y)), s2)
+        (RealVal x, RealVal y, 0) -> Just (IntVal (truncate (x/y)), s2)
+        (RealVal x, RealVal y, _) -> Just (RealVal (x / y), s2)
+        (RealVal x, IntVal y, _) -> Just (RealVal (x / fromIntegral y), s2)
+        (IntVal x, RealVal y, _) -> Just (RealVal (fromIntegral x / y), s2)
+        (IntVal x, IntVal y, _) -> Just (RealVal (fromIntegral x / fromIntegral y), s2)
         (_ , _ , _) -> Nothing
 
 --Comparison Expressions
-eval env (BinExp GOp exp1 exp2) = compOp (>) (>) (eval env exp1) (eval env exp2)
-eval env (BinExp LOp exp1 exp2) = compOp (<) (<) (eval env exp1) (eval env exp2)
-eval env (BinExp GeqOp exp1 exp2) = compOp (>=) (>=) (eval env exp1) (eval env exp2)
-eval env (BinExp LeqOp exp1 exp2) = compOp (<=) (<=) (eval env exp1) (eval env exp2)
-eval env (BinExp EqOp exp1 exp2) = case (eval env exp1, eval env exp2) of
-    (Just val1, Just val2) ->  Just $ BoolVal $ val1 == val2
-    _ -> Nothing
+evalE context (BinExp GOp exp1 exp2) = do
+    (val1,s1) <- evalE context exp1
+    (val2,s2) <- evalE context{store = s1} exp2
+    ans <- compOp (>) (>) val1 val2
+    Just (ans, s2)
+evalE context (BinExp LOp exp1 exp2) =  do
+    (val1,s1) <- evalE context exp1
+    (val2,s2) <- evalE context{store = s1} exp2
+    ans <- compOp (<) (<) val1 val2
+    Just (ans, s2)
+evalE context (BinExp GeqOp exp1 exp2) =  do
+    (val1,s1) <- evalE context exp1
+    (val2,s2) <- evalE context{store = s1} exp2
+    ans <- compOp (>=) (>=) val1 val2
+    Just (ans, s2)
+evalE context (BinExp LeqOp exp1 exp2) =  do
+    (val1,s1) <- evalE context exp1
+    (val2,s2) <- evalE context{store = s1} exp2
+    ans <- compOp (<=) (<=) val1 val2
+    Just (ans, s2)
+evalE context (BinExp EqOp exp1 exp2) = do
+    (val1, s1) <- evalE context exp1
+    (val2, s2) <- evalE context{store = s1} exp2
+    Just (BoolVal $ val1 == val2, s2)
 
 --Logical Expressions
-eval env (BinExp AndOp exp1 exp2) = case eval env exp1 of
-    Just (BoolVal False) -> Just $ BoolVal False
-    Just (BoolVal True)  -> case eval env exp2 of
-        Just (BoolVal False) -> Just (BoolVal False)
-        Just (BoolVal True)  -> Just (BoolVal True)
+evalE context (BinExp AndOp exp1 exp2) = case evalE context exp1 of
+    Just (BoolVal False, s) -> Just (BoolVal False, s)
+    Just (BoolVal True, _)  -> case evalE context exp2 of
+        Just (BoolVal False, s) -> Just (BoolVal False, s)
+        Just (BoolVal True, s)  -> Just (BoolVal True, s)
         _ -> Nothing
     _ -> Nothing
-eval env (BinExp OrOp exp1 exp2) = case eval env exp1 of
-    Just (BoolVal True) -> Just $ BoolVal True
-    Just (BoolVal False) -> case eval env exp2 of
-        Just (BoolVal True) -> Just $ BoolVal True
-        Just (BoolVal False) -> Just $ BoolVal False
+evalE context (BinExp OrOp exp1 exp2) = case evalE context exp1 of
+    Just (BoolVal True, s) -> Just (BoolVal True, s)
+    Just (BoolVal False, _) -> case evalE context exp2 of
+        Just (BoolVal True, s) -> Just (BoolVal True, s)
+        Just (BoolVal False, s) -> Just (BoolVal False, s)
         _ -> Nothing
     _ -> Nothing
 
 --Constants
-eval env (ConstExp Pi) = Just $ RealVal pi
-eval env (ConstExp Fee) = Just $ RealVal (exp 1)
-eval env (ConstExp Phi) = Just $ RealVal ((sqrt 5 + 2)/2)
-eval env (ConstExp Mole) = Just $ RealVal 6.02214076e23
+evalE context (ConstExp Pi) = Just (RealVal pi, store context)
+evalE context (ConstExp Fee) = Just (RealVal (exp 1), store context)
+evalE context (ConstExp Phi) = Just (RealVal ((sqrt 5 + 2)/2), store context)
+evalE context (ConstExp Mole) = Just (RealVal 6.02214076e23, store context)
 
 --Values
-eval env (IntExp val) = Just $ IntVal val
-eval env (RealExp val) = Just $ RealVal val
-eval env (BoolExp val) = Just $ BoolVal val
-eval env (StringExp val) = Just $ StringVal val
-eval env (VarExp val) = lookupEnv val env
+evalE context (IntExp val) = Just (IntVal val, store context)
+evalE context (RealExp val) = Just (RealVal val, store context)
+evalE context (BoolExp val) = Just (BoolVal val, store context)
+evalE context (StringExp val) = Just (StringVal val, store context)
+evalE context (VarExp val) = case lookupEnv val (env context) of
+    Just rval -> Just (rval, store context)
+    _ -> Nothing
 
 --Conditional
-eval env (IfExp arg1 arg2 arg3) = case eval env arg1 of
-    Just (IntVal 0) -> eval env arg2
-    Just (RealVal 0) -> eval env arg2
+evalE context (IfExp arg1 arg2 arg3) = case evalE context arg1 of
+    Just (IntVal 0, nStore) -> evalE context{store = nStore} arg2
+    Just (RealVal 0, nStore) -> evalE context{store = nStore} arg2
     Nothing -> Nothing
-    _ -> eval env arg3
-eval env (HenceExp arg1 arg2 arg3) = case eval env arg1 of
-    Just (BoolVal True) -> eval env arg2
-    Just (BoolVal False) -> eval env arg3
+    _ -> evalE context arg3
+evalE context (HenceExp arg1 arg2 arg3) = case evalE context arg1 of
+    Just (BoolVal True, nStore) -> evalE context{store = nStore} arg2
+    Just (BoolVal False, nStore) -> evalE context{store = nStore} arg3
     _ -> Nothing
 
 --Pairs
-eval env (PairExp exp1 exp2) = case (eval env exp1, eval env exp2) of
-    (Just val1, Just val2) -> Just $ PairVal val1 val2
+evalE context (PairExp exp1 exp2) = do
+    (val1, s1) <- evalE context exp1
+    (val2, s2) <-  evalE context{store = s1} exp2
+    Just (PairVal val1 val2, s2)
+
+evalE context UnitExp = Just (UnitVal, store context)
+evalE context (MateExp exp) = case evalE context exp of
+    Just (PairVal ft _, nStore) -> Just (ft, nStore)
     _ -> Nothing
-eval env UnitExp = Just UnitVal
-eval env (MateExp exp) = case eval env exp of
-    Just (PairVal ft _) -> Just ft
-    _ -> Nothing
-eval env (BlokeExp exp) = case eval env exp of
-    Just (PairVal _ sd) -> Just sd
+evalE context (BlokeExp exp) = case evalE context exp of
+    Just (PairVal _ sd, nStore) -> Just (sd, nStore)
     _ -> Nothing
 
 --Functions
-eval env (FuncDExp parameter body) = Just $ FuncVal parameter body env
+evalE context (FuncDExp parameter body) = Just (FuncVal parameter body (env context), store context)
 
-eval env (FuncAExp fexp argument) =  do
-    funcVal@(FuncVal parameter body oldEnv) <- eval env fexp
-    evalArg <- eval env argument
-    eval (updateEnv parameter evalArg oldEnv) body
+evalE context (FuncAExp fexp argument) =  do
+    funcVal@(FuncVal parameter body oldEnv, _) <- evalE context fexp
+    (evalArg,_) <- evalE context argument
+    evalE context{env = updateEnv parameter evalArg oldEnv} body
 
 --Others
-eval env (NegExp exp) = negateV (eval env exp)
-eval env (SqrtExp exp) = sqrtV (eval env exp)
-eval env (LDeclExp var val exp) = case eval env val of
-    Just x -> eval (updateEnv var x env) exp
+evalE context (NegExp exp) = do 
+    (val, s) <- evalE context exp
+    case val of 
+        (IntVal v) -> Just(IntVal $ negate v, s)
+        (RealVal v) -> Just(RealVal $ negate v, s)
+        _ -> Nothing
+
+evalE context (NegBExp exp) = do 
+    (val, s) <- evalE context exp
+    case val of 
+        (BoolVal v) -> Just(BoolVal $ not v, s)
+        _ -> Nothing
+
+evalE context (SqrtExp exp) = do
+    (val, s) <- evalE context exp
+    Just(sqrtV val, s)
+evalE context (LDeclExp var val exp) = do
+    (v, nStore) <- evalE context val
+    evalE context{env = updateEnv var v (env context), store = nStore} exp 
+
+--Mutability 
+
+evalE context (DisplayExp exp) = do
+    (val, sto) <- evalE context exp
+    let nLoc = newLoc sto
+    Just (RefVal nLoc, (nLoc, val) : sto)
+
+evalE context (DeRefExp exp) = case evalE context exp of 
+    Just(RefVal locval, newStore) -> do
+        val <- lookupStore locval newStore
+        Just (val, newStore)
     _ -> Nothing
 
-eval env _ = Nothing
+evalE context (MutExp exp1 exp2) = case evalE context exp1 of
+    Just(RefVal locval, s1) -> do 
+        a <- lookupStore locval s1 
+        (val, s2) <- evalE context{store = s1} exp2
+        Just (val, updateStore locval val s2) 
+    _ -> Nothing
+
+
+--Imperative Constructs
+
+evalE context (SeqExp exp1 exp2) = do 
+    (_, s1) <- evalE context exp1 
+    (val, s2) <- evalE context{store = s1} exp2
+    Just (val, s2)
+
+evalE context (WhileExp cond block) = case evalE context cond of
+    Just (BoolVal False, condStore) -> Just (UnitVal, condStore)
+    Just (BoolVal True, condStore) -> do
+        (_, loopStore) <- evalE (context {store = condStore}) block
+        evalE  (context {store = loopStore}) (WhileExp cond block)
+    _ -> Nothing
+evalE context _ = Nothing
 
 
 

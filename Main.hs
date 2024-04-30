@@ -3,7 +3,7 @@ import Lexer
 import Eval
 
 repl :: IO ()
-repl = loop Context{env = [], store = []} 1
+repl = loop Context{env = [], store = [], classes =[]} 1
     where
         loop context count = do
             input <- getBlock

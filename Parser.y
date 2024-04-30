@@ -27,8 +27,6 @@ import Data.Maybe
   leq                       { OpTok LeqOp}
   geq                       { OpTok GeqOp}
   ifz                       { IfzTok}
-  then                      { ThenTok }
-  else                      { ElseTok }
   "("                       { LeftPTok }
   ")"                       { RightPTok }
   "["                       { LeftBTok }
@@ -47,8 +45,8 @@ import Data.Maybe
   cheers                    { CheersTok }
   mate                      { MateTok }
   bloke                     { BlokeTok }
-  ";"                         { SemiTok}
-  "=>"                        { RocketTok}
+  ";"                       { SemiTok}
+  "=>"                      { RocketTok}
   const                     { ConstTok $$}
   int                       { IntTok $$ }
   real                      { Realtok $$}
@@ -57,30 +55,54 @@ import Data.Maybe
   var                       { VarTok $$}
   string                    { StringTok $$}
   display                   { DisplayTok }
-  "=="                        { MutateTok }
+  "=="                      { MutateTok }
   whilst                    { WhileTok}
   doeth                     { DoTok}
   "|"                       { DeRefTok}
   "~"                       { SeqTok }
+  noble                     { NobleTok }
+  serfs                     { SerfTok }
+  obeys                     { ObeyTok }   
+  decree                    { DecreeTok }
+  a                         { ATok }
+  "."                         { DotTok }
+  "{"                       { LCurlyTok }
+  "}"                       { RCurlyTok }
+  fname                     { FNameTok $$ }
+  and                       { AndTok }
 
 
-%nonassoc "~" display doeth
-%left "=>" "==" 
-%left else otherwise for
+%nonassoc doeth otherwise for "=>"
+%right "~"
+%left  "==" 
+%nonassoc display
+%left otherwise for
 %right "\\/" "/\\"
 %nonassoc "=" "<" ">" leq geq 
 %left "-" "+"
-%nonassoc sqrt
-%left "%" "*" "/"
+%left "%"
+%left "*" "/"
 %right "^"
-%nonassoc NEG
+%nonassoc NEG sqrt
+%nonassoc "."
 %left "(" ")"
 %%
 
 
-S : E innit { ExpS $1}
+D : E innit { ExpS $1}
   | hearye var is E innit {DecS $2 $4}
   | colonize var is E innit {RecS $2 $4}
+  | noble var "{"M"}" innit {CDec $2 $4}
+  | noble var obeys var "{"M"}" innit {InheritDec $2 $4 $6}
+M : serfs FList MList {$2 ++ $3}
+  | MList {$1}
+FList : fname {[FieldD $1 ]}
+  | fname"," FList {(FieldD $1) : $3 }
+MList : {- empty -} {[]} 
+  | decree fname is E MList {(MethodD $2 $4) : $5}
+EList : {- empty -} { [] }
+  | E { [$1] }
+  | E and EList { $1 : $3 }
 E : int {IntExp $1} 
   | real {RealExp $1} 
   | const {ConstExp $1}
@@ -111,7 +133,7 @@ E : int {IntExp $1}
   | E "<" E {BinExp LOp $1 $3}
   | E leq E {BinExp LeqOp $1 $3}
   | E geq E {BinExp GeqOp $1 $3}
-  | ifz E then E else E {IfExp $2 $4 $6}
+  | ifz E hence E otherwise E {IfExp $2 $4 $6}
   | supposing E hence E otherwise E {HenceExp $2 $4 $6}
   | oi var is E for E {LDeclExp $2 $4 $6}
   | display E {DisplayExp $2}
@@ -119,15 +141,17 @@ E : int {IntExp $1}
   | E "==" E    {MutExp $1 $3}
   | E "~" E     {SeqExp $1 $3}
   | whilst E doeth E {WhileExp $2 $4}
-{
+  | a var "{"EList"}" {NewExp $2 $4 }
+  | E"."fname           {LookupExp $1 $3}
+{ 
 
 type Var = String
-data Statement = ExpS Exp | DecS Var Exp | RecS Var Exp deriving Show
+data Statement = ExpS Exp | DecS Var Exp | RecS Var Exp | CDec String [CElemD] | InheritDec String String [CElemD] deriving Show
 data Exp = IntExp Integer | RealExp Double | ConstExp Const | BoolExp Bool | VarExp Var | StringExp String | SqrtExp Exp 
            | BinExp Op Exp Exp | IfExp Exp Exp Exp | HenceExp Exp Exp Exp |NegExp Exp |NegBExp Exp |LDeclExp String Exp Exp | MateExp Exp 
            | BlokeExp Exp | UnitExp | FuncDExp String Exp | FuncAExp Exp Exp | PairExp Exp Exp | DisplayExp Exp | DeRefExp Exp 
-           | MutExp Exp Exp | WhileExp Exp Exp | SeqExp Exp Exp deriving (Show, Eq)
-
+           | MutExp Exp Exp | WhileExp Exp Exp | SeqExp Exp Exp | NewExp String [Exp] | LookupExp Exp String deriving (Show, Eq)
+data CElemD = FieldD Var| MethodD Var Exp deriving Show
 parseError :: [Token] -> Maybe a
 parseError _ = Nothing
 

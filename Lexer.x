@@ -43,10 +43,10 @@ tokens :-
   cheers                   { const CheersTok }
   mate                     { const MateTok}
   bloke                    { const BlokeTok}
-  ","                        { const ComTok}
-  ";"                        { const SemiTok}
+  ","                      { const ComTok}
+  ";"                      { const SemiTok}
   and                      { const AndTok }
-  "#"                        { const UnitTok }
+  "#"                      { const UnitTok }
   =>                       { const RocketTok}
   pie                      { const (ConstTok Pi)}
   fee                      { const (ConstTok Fee)}
@@ -66,12 +66,24 @@ tokens :-
   doeth                    { const DoTok }
   "|"                      { const DeRefTok }
   "~"                      { const SeqTok }
+  noble                    { const NobleTok }
+  serfs                    { const SerfTok }
+  obeys                    { const ObeyTok }   
+  oneself                  { const (VarTok "oneself")}
+  decree                   { const DecreeTok }
+  a                        { const ATok }
+  "."                        { const DotTok }
+  "{"                      { const LCurlyTok }
+  "}"                      { const RCurlyTok }
+  [A-Z]([A-z_])*           { VarTok }
+  [a-z]([a-z_])*           { FNameTok }
+
 {
 data Token = OpTok Op| ConstTok Const | VarTok String | IntTok Integer | Realtok Double | BoolTok Bool | StringTok String| IfzTok 
-            | ThenTok | ElseTok | EOLTok| LeftPTok | RightPTok | LeftBTok | RightBTok | SqrtTok | SupposingTok | HenceTok 
-            | OtherwiseTok | HearyeTok | OiTok | IsTok | ForTok | InnitTok | ColonizeTok | CheersTok | MateTok |BlokeTok 
-            | ComTok | SemiTok | AndTok | UnitTok |SndTok | RocketTok | DisplayTok | MutateTok | WhileTok | DoTok
-            | DeRefTok | SeqTok deriving (Show, Eq) 
+            | ThenTok | ElseTok | EOLTok| LeftPTok | RightPTok | LeftBTok | RightBTok | SqrtTok | SupposingTok | HenceTok | OtherwiseTok 
+            | HearyeTok | OiTok | IsTok | ForTok | InnitTok | ColonizeTok | CheersTok | MateTok |BlokeTok | ComTok | SemiTok | AndTok 
+            | UnitTok |SndTok | RocketTok | DisplayTok | MutateTok | WhileTok | DoTok | DeRefTok | SeqTok | NobleTok | SerfTok | ObeyTok 
+            | SelfTok | DecreeTok | ATok | DotTok | LCurlyTok | RCurlyTok | FNameTok String deriving (Show, Eq) 
 
 data Op = EqOp | AddOp | SubOp | MultOp | DivOp | ExpOp | ModOp| GOp |LOp| GeqOp | LeqOp |AndOp | OrOp deriving (Show, Eq) 
 

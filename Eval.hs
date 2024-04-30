@@ -29,7 +29,8 @@ instance Show Value where
     show (PairVal fst snd) = "/" ++ show fst ++ ", " ++ show snd ++ "\\"
     show UnitVal = "#"
     show (FuncVal s _ _) = s
-    show (RefVal loc) = "Error trying to show a reference value"
+    show (RefVal loc) = "ReftoVal @" ++ show loc
+    show (ObjectVal name vals) = name ++ " { " ++ concatMap show vals ++ " } "
     show _ = "undefined show"
 
 instance Eq Value where
@@ -53,11 +54,11 @@ lookupStore :: Location -> Store -> Maybe Value
 lookupStore = lookup
 
 lookupClass :: CName -> CEnv -> Maybe (Maybe CName, CTable)
-lookupClass = lookup 
+lookupClass = lookup
 
 numFields :: CTable -> Int -> Int
 numFields [] cur = cur + 1
-numFields (x:xs) cur = case x of 
+numFields (x:xs) cur = case x of
     (_, Field ind) -> numFields xs (max ind cur)
     (_, _) -> numFields xs cur
 
@@ -127,10 +128,10 @@ evalD context (CDec name elems) = let
     helper :: [CElemD] -> CTable -> Index -> Maybe CTable
     helper [] fields _ = Just fields
     helper (x:xs) fields ind = case x of
-        FieldD var -> if any (\(x, _) -> x == var) fields then Nothing else helper xs ((var, Field ind) : fields) (ind + 1)            
+        FieldD var -> if any (\(x, _) -> x == var) fields then Nothing else helper xs ((var, Field ind) : fields) (ind + 1)
         MethodD var body -> if any (\(x, _) -> x == var) fields then Nothing else helper xs ((var, Method body (env context)) : fields) ind
     table = helper elems [] 0
-    in case table of 
+    in case table of
         Nothing -> Nothing
         Just ctab -> Just (UnitVal, context{classes=(name, (Nothing, ctab)):classes context})
 
@@ -336,16 +337,16 @@ evalE context (NewExp name exps) = do
 evalE context (LookupExp exp field) = case evalE context exp of
     Just(ObjectVal name values, newStore) -> do
         (_, table) <- lookupClass name (classes context)
-        case lookup field table of 
+        case lookup field table of
             Just(Field ind) -> case values !! ind of
                 val -> Just (val, newStore)
                 _ -> Nothing
-            Just(Method body mEnv) -> 
+            Just(Method body mEnv) ->
                 let self = ObjectVal name values
                     selfEnv = ("oneself", self) : mEnv
                 in evalE context{env=selfEnv} body
             _ -> Nothing
-    _ -> Nothing 
+    _ -> Nothing
 
 evalE context _ = Nothing
 

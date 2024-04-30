@@ -65,7 +65,7 @@ import Data.Maybe
   obeys                     { ObeyTok }   
   decree                    { DecreeTok }
   a                         { ATok }
-  "."                         { DotTok }
+  "."                       { DotTok }
   "{"                       { LCurlyTok }
   "}"                       { RCurlyTok }
   fname                     { FNameTok $$ }

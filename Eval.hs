@@ -57,9 +57,9 @@ lookupClass :: CName -> CEnv -> Maybe (Maybe CName, CTable)
 lookupClass = lookup
 
 numFields :: CTable -> Int -> Int
-numFields [] cur = cur + 1
+numFields [] cur = cur 
 numFields (x:xs) cur = case x of
-    (_, Field ind) -> numFields xs (max ind cur)
+    (_, Field ind) -> numFields xs ((max ind cur)+1)
     (_, _) -> numFields xs cur
 
 

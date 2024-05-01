@@ -75,7 +75,7 @@ tokens :-
   "."                        { const DotTok }
   "{"                      { const LCurlyTok }
   "}"                      { const RCurlyTok }
-  [A-Z]([A-z_])*           { VarTok }
+  [A-Z] [a-zA-Z_]*           { VarTok }
   [a-z]([a-z_])*           { FNameTok }
 
 {

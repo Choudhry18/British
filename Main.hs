@@ -6,42 +6,42 @@ repl :: IO ()
 repl = loop Context{env = [], store = [], classes =[]} 1
     where
         loop context count = do
-            input <- getBlock
+            (c,input) <- getBlock
             if input == ":quit"
                 then putStrLn "Goodbye!"
                 else do
                     case scanTokens input of
-                        Just [] -> loop context (count + 1)
+                        Just [] -> loop context (count + c)
                         Just tokens -> case parse tokens of
                             Just statement -> case evalD context statement of
                                 Just (UnitVal, newContext) -> do
-                                    loop newContext (count + 1)
+                                    loop newContext (count + c)
                                 Just (val, newContext) -> do
                                     putStr "> "
                                     putStrLn $ show val
-                                    loop newContext (count + 1)
-                                Nothing -> putStrLn $ "Knobhead made an error on " ++ show count
-                            Nothing -> putStrLn $ "Bonkers on line " ++ show count
-                        Nothing -> putStrLn $ "Loony on line " ++ show count
-                    loop context (count + 1)
+                                    loop newContext (count + c)
+                                Nothing -> putStrLn $ "Knobhead made an error on " ++ show (count+c)
+                            Nothing -> putStrLn $ "Bonkers on line " ++ show (count+c)
+                        Nothing -> putStrLn $ "Loony on line " ++ show (count+c)
+                    loop context (count + c)
 
 
 main :: IO ()
 main = repl
 
-getBlock :: IO String
-getBlock = aux ""
+getBlock :: IO (Int, String)
+getBlock = aux 0 ""
   where 
-    aux :: String -> IO String
-    aux prevStr = do
+    aux :: Int -> String -> IO (Int, String)
+    aux lineCount prevStr = do
       line <- getLine
       let newLine = concat [prevStr, "\n", line]
       case scanTokens line of
-        Just [] -> aux prevStr
+        Just [] -> aux (lineCount+1) prevStr  -- Continue if line is empty
         Just tks ->
-          if last tks == InnitTok
-            then return newLine
-            else aux newLine
-        Nothing -> return newLine
+          if last tks == InnitTok  -- Check if the last token is InnitTok
+            then return (lineCount + 1, newLine)  -- Return the accumulated string and line count
+            else aux (lineCount + 1) newLine     -- Continue reading input and increment line count
+        Nothing -> aux lineCount newLine         -- Continue reading input if scanning fails and increment line count
 
 

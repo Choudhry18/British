@@ -4,6 +4,7 @@ import Lexer
 import Distribution.Compat.Lens (_1)
 import GHC.Real (underflowError)
 import Data.Text.Array (new)
+import Debug.Trace
 import Data.Maybe
 
 type Index = Int
@@ -59,7 +60,7 @@ lookupClass = lookup
 numFields :: CTable -> Int -> Int
 numFields [] cur = cur 
 numFields (x:xs) cur = case x of
-    (_, Field ind) -> numFields xs ((max ind cur)+1)
+    (_, Field ind) -> numFields xs cur+1
     (_, _) -> numFields xs cur
 
 

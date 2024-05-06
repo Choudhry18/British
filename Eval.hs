@@ -4,7 +4,6 @@ import Lexer
 import Distribution.Compat.Lens (_1)
 import GHC.Real (underflowError)
 import Data.Text.Array (new)
-import Debug.Trace
 import Data.Maybe
 
 type Index = Int

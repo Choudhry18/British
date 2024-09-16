@@ -70,7 +70,7 @@ import Data.Maybe
   "}"                       { RCurlyTok }
   fname                     { FNameTok $$ }
   and                       { AndTok }
-
+  ":quit"                     { QuitTok }
 
 %nonassoc doeth otherwise for "=>"
 %right "~"
@@ -94,6 +94,7 @@ D : E innit { ExpS $1}
   | colonize var is E innit {RecS $2 $4}
   | noble var "{"M"}" innit {CDec $2 $4}
   | noble var obeys var "{"M"}" innit {InheritDec $2 $4 $6}
+  | ":quit" { QuitS }
 M : serfs FList MList {$2 ++ $3}
   | MList {$1}
 FList : fname {[FieldD $1 ]}
@@ -146,7 +147,7 @@ E : int {IntExp $1}
 { 
 
 type Var = String
-data Statement = ExpS Exp | DecS Var Exp | RecS Var Exp | CDec String [CElemD] | InheritDec String String [CElemD] deriving Show
+data Statement = ExpS Exp | DecS Var Exp | RecS Var Exp | CDec String [CElemD] | QuitS | InheritDec String String [CElemD] deriving Show
 data Exp = IntExp Integer | RealExp Double | ConstExp Const | BoolExp Bool | VarExp Var | StringExp String | SqrtExp Exp 
            | BinExp Op Exp Exp | IfExp Exp Exp Exp | HenceExp Exp Exp Exp |NegExp Exp |NegBExp Exp |LDeclExp String Exp Exp | MateExp Exp 
            | BlokeExp Exp | UnitExp | FuncDExp String Exp | FuncAExp Exp Exp | PairExp Exp Exp | DisplayExp Exp | DeRefExp Exp 

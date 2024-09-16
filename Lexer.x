@@ -8,6 +8,7 @@ $digit = 0-9
 $alpha = [a-zA-Z]
 
 tokens :- 
+  :quit                    { const QuitTok}
   =                        { const (OpTok EqOp) }
   \+                       { const (OpTok AddOp) }
   \-                       { const (OpTok SubOp) }
@@ -83,7 +84,7 @@ data Token = OpTok Op| ConstTok Const | VarTok String | IntTok Integer | Realtok
             | ThenTok | ElseTok | EOLTok| LeftPTok | RightPTok | LeftBTok | RightBTok | SqrtTok | SupposingTok | HenceTok | OtherwiseTok 
             | HearyeTok | OiTok | IsTok | ForTok | InnitTok | ColonizeTok | CheersTok | MateTok |BlokeTok | ComTok | SemiTok | AndTok 
             | UnitTok |SndTok | RocketTok | DisplayTok | MutateTok | WhileTok | DoTok | DeRefTok | SeqTok | NobleTok | SerfTok | ObeyTok 
-            | SelfTok | DecreeTok | ATok | DotTok | LCurlyTok | RCurlyTok | FNameTok String deriving (Show, Eq) 
+            | SelfTok | DecreeTok | ATok | DotTok | LCurlyTok | RCurlyTok | QuitTok | FNameTok String deriving (Show, Eq) 
 
 data Op = EqOp | AddOp | SubOp | MultOp | DivOp | ExpOp | ModOp| GOp |LOp| GeqOp | LeqOp |AndOp | OrOp deriving (Show, Eq) 
 

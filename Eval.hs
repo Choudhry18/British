@@ -135,6 +135,8 @@ evalD context (CDec name elems) = let
         Nothing -> Nothing
         Just ctab -> Just (UnitVal, context{classes=(name, (Nothing, ctab)):classes context})
 
+evalD context QuitS = Just (StringVal "Thank you", context)
+
 evalD _ _ = Nothing
 
 evalE :: Context -> Exp -> Maybe (Value, Store)

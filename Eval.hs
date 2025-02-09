@@ -31,7 +31,7 @@ instance Show Value where
     show (FuncVal s _ _) = s
     show (RefVal loc) = "ReftoVal @" ++ show loc
     show (ObjectVal name vals) = name ++ " { " ++ concatMap show vals ++ " } "
-    show _ = "undefined show"
+--    show _ = "undefined show"
 
 instance Eq Value where
     (==) :: Value -> Value -> Bool
@@ -65,7 +65,7 @@ numFields (x:xs) cur = case x of
 
 newLoc :: Store -> Location
 newLoc [] = 0
-newLoc sto = (maximum $ map fst sto) + 1
+newLoc sto = maximum (map fst sto) + 1
 
 
 updateEnv :: Var -> Value -> Env -> Env
@@ -342,7 +342,7 @@ evalE context (LookupExp exp field) = case evalE context exp of
         case lookup field table of
             Just(Field ind) -> case values !! ind of
                 val -> Just (val, newStore)
-                _ -> Nothing
+--                _ -> Nothing
             Just(Method body mEnv) ->
                 let self = ObjectVal name values
                     selfEnv = ("oneself", self) : mEnv
@@ -350,7 +350,7 @@ evalE context (LookupExp exp field) = case evalE context exp of
             _ -> Nothing
     _ -> Nothing
 
-evalE context _ = Nothing
+--evalE context _ = Nothing
 
 
 
